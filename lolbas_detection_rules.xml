@@ -155,7 +155,7 @@
 
   <rule id="100203" level="10">
     <if_sid>61613</if_sid>
-    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\Microsoft\.DesktopAppInstaller_[0-9a-z]+\\AC\\INetCache\\</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\Microsoft\.DesktopAppInstaller_[0-9a-z]+\\AC\\INetCache\\.*</field>
     <description>LOLBAS [T1105] Suspicious: File created in AppInstaller INetCache - remote content staged via ms-appinstaller protocol</description>
     <group>T1105,lolbas_appinstaller,</group>
     <mitre>
@@ -299,7 +299,7 @@
 
   <rule id="100304" level="13">
     <if_sid>100300,100301</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)\\\\[a-z0-9_\-\.]+\\</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)\\\\[a-z0-9_\-\.]+\\.*</field>
     <description>LOLBAS [T1053.002] High: At.exe called with UNC remote path - scheduled execution of payload from network share (lateral movement indicator)</description>
     <group>T1053.002,lolbas_at,</group>
     <mitre>
