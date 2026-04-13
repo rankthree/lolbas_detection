@@ -1,7 +1,7 @@
 <group name="vsec,lolbas,windows,sysmon,">
 
   <rule id="100100" level="0">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\AddinUtil\.exe$</field>
     <description>LOLBAS T1218 AddinUtil.exe execution</description>
@@ -16,7 +16,7 @@
   </rule>
 
   <rule id="100103" level="15">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.parentImage" type="pcre2">(?i)\\AddinUtil\.exe$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|calc)\.exe$</field>
@@ -32,7 +32,7 @@
   </rule>
 
   <rule id="100105" level="12">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^3$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\AddinUtil\.exe$</field>
     <description>LOLBAS T1218 AddinUtil.exe initiated outbound network connection</description>
@@ -40,7 +40,7 @@
   </rule>
 
   <rule id="100106" level="15">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.originalFileName" type="pcre2">(?i)ysoserial(\.net)?\.exe</field>
     <description>CRITICAL ysoserial.exe executed - payload generator</description>
@@ -48,7 +48,7 @@
   </rule>
 
   <rule id="100200" level="12">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^4104$</field>
     <field name="win.eventdata.scriptBlockText" type="pcre2">(?i)ms-appinstaller://\?source=https?://</field>
     <description>LOLBAS T1105 ms-appinstaller URI found in PowerShell ScriptBlock</description>
@@ -56,7 +56,7 @@
   </rule>
 
   <rule id="100201" level="12">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\AppInstaller\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://\?source=https?://</field>
@@ -65,7 +65,7 @@
   </rule>
 
   <rule id="100202" level="10">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^11$</field>
     <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\Microsoft\.DesktopAppInstaller_[0-9a-z]+\\AC\\INetCache\\.*</field>
     <description>LOLBAS T1105 File created in AppInstaller INetCache</description>
@@ -73,7 +73,7 @@
   </rule>
 
   <rule id="100203" level="8">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^3$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\AppInstaller\.exe$</field>
     <description>LOLBAS T1105 AppInstaller.exe initiated network connection</description>
@@ -81,7 +81,7 @@
   </rule>
 
   <rule id="100210" level="0">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
     <description>LOLBAS T1127 aspnet_compiler.exe executed</description>
@@ -96,7 +96,7 @@
   </rule>
 
   <rule id="100212" level="14">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.parentImage" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh)\.exe$</field>
@@ -105,7 +105,7 @@
   </rule>
 
   <rule id="100300" level="0">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\at\.exe$</field>
     <description>LOLBAS T1053.002 At.exe process creation</description>
@@ -127,7 +127,7 @@
   </rule>
 
   <rule id="100320" level="0">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\ATBroker\.exe$</field>
     <description>LOLBAS T1546.008 ATBroker.exe process creation</description>
@@ -142,7 +142,7 @@
   </rule>
 
   <rule id="100322" level="13">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(12|13|14)$</field>
     <field name="win.eventdata.targetObject" type="pcre2">(?i)\\(SOFTWARE\\Microsoft|Software\\Microsoft)\\Windows NT\\CurrentVersion\\Accessibility\\(ATs|Configuration)</field>
     <description>LOLBAS T1546.008 Registry mod to Accessibility ATs Configuration</description>
@@ -150,7 +150,7 @@
   </rule>
 
   <rule id="100330" level="3">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\bash\.exe$</field>
     <description>LOLBAS T1202 bash.exe legacy process creation</description>
@@ -172,7 +172,7 @@
   </rule>
 
   <rule id="100333" level="13">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.parentImage" type="pcre2">(?i)\\bash\.exe$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh)\.exe$</field>
@@ -181,7 +181,7 @@
   </rule>
 
   <rule id="100334" level="13">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^3$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\bash\.exe$</field>
     <description>LOLBAS T1202 bash.exe initiated network connection</description>
@@ -189,7 +189,7 @@
   </rule>
 
   <rule id="100400" level="12">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)(/transfer\s|/addfile\s).*https?://</field>
@@ -198,7 +198,7 @@
   </rule>
 
   <rule id="100402" level="14">
-    <decoded_as>json</decoded_as>
+    <decoded_as>windows_eventchannel</decoded_as>
     <field name="win.system.eventID" type="pcre2">^(1|4688)$</field>
     <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)/setnotifycmdline\s</field>
