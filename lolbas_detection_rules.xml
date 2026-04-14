@@ -1,418 +1,318 @@
-<group name="attack_lab,lolbas,windows,sysmon,">
+<group name="vsec,lolbas,windows,sysmon,">
 
   <rule id="100100" level="0">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <description>T1218 AddinUtil.exe process creation observed (baseline)</description>
+    <description>T1218 AddinUtil.exe execution (Sysmon)</description>
     <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
   </rule>
 
-  <rule id="100101" level="0">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
+  <rule id="100150" level="0">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
     <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <description>T1218 AddinUtil.exe process creation observed via Security 4688 (baseline)</description>
+    <description>T1218 AddinUtil.exe execution (Native)</description>
     <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
   </rule>
 
   <rule id="100102" level="12">
-    <if_sid>100100,100101</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(-AddinRoot:|--AddinRoot:|/AddinRoot:|-PipelineRoot:|--PipelineRoot:|/PipelineRoot:).*(?:\\temp\\|\\downloads?\\|\\public\\|\\appdata\\|\\users\\|\.)</field>
-    <description>T1218 AddinUtil.exe called with sensitive -AddinRoot/-PipelineRoot path - potential deserialization attack</description>
+    <if_sid>100100,100150</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(-AddinRoot:|--AddinRoot:|/AddinRoot:|-PipelineRoot:|--PipelineRoot:|/PipelineRoot:).*(?:\\temp\\|\\user\\|\\downloads?\\|\\public\\|\.)</field>
+    <description>T1218 AddinUtil.exe called with sensitive paths</description>
     <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
   </rule>
 
   <rule id="100103" level="15">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.parentImage" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|net\.exe|net1|schtasks|at\.exe|msiexec|calc)\.exe$</field>
-    <description>T1218 CRITICAL: AddinUtil.exe spawned suspicious child process - active deserialization payload execution</description>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|calc)\.exe$</field>
+    <description>T1218 AddinUtil.exe spawned suspicious child process (Sysmon)</description>
     <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-      <id>T1059</id>
-    </mitre>
   </rule>
 
-  <rule id="100104" level="15">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
+  <rule id="100153" level="15">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
     <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|net\.exe|net1|schtasks|at\.exe|msiexec|calc)\.exe$</field>
-    <description>T1218 CRITICAL: AddinUtil.exe spawned suspicious child process via Security 4688 - active deserialization payload execution</description>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh|calc)\.exe$</field>
+    <description>T1218 AddinUtil.exe spawned suspicious child process (Native)</description>
     <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-      <id>T1059</id>
-    </mitre>
   </rule>
 
-  <rule id="100105" level="13">
+  <rule id="100104" level="12">
+    <if_sid>100100</if_sid>
+    <field name="win.eventdata.image" type="pcre2" negate="yes">(?i)(\\Microsoft\.NET\\Framework(64)?|\\WinSxS)\\.*</field>
+    <description>T1218 AddinUtil.exe executed outside default directories (Sysmon)</description>
+    <group>T1218,lolbas_addinutil,</group>
+  </rule>
+
+  <rule id="100154" level="12">
+    <if_sid>100150</if_sid>
+    <field name="win.eventdata.newProcessName" type="pcre2" negate="yes">(?i)(\\Microsoft\.NET\\Framework(64)?|\\WinSxS)\\.*</field>
+    <description>T1218 AddinUtil.exe executed outside default directories (Native)</description>
+    <group>T1218,lolbas_addinutil,</group>
+  </rule>
+
+  <rule id="100105" level="12">
     <if_sid>61605</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\AddinUtil\.exe$</field>
-    <field name="win.eventdata.destinationIsIpv6">false</field>
-    <description>T1218 High: AddinUtil.exe initiated outbound network connection - unexpected for a .NET cache utility</description>
+    <description>T1218 AddinUtil.exe initiated outbound network connection</description>
     <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
   </rule>
 
-  <rule id="100106" level="10">
-    <if_sid>61613</if_sid>
-    <field name="win.eventdata.targetFilename" type="pcre2">(?i)Addins\.store$</field>
-    <description>T1218 Suspicious: Addins.store file created - may be malicious deserialization payload for AddinUtil.exe</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100107" level="13">
-    <if_sid>100106</if_sid>
-    <field name="win.eventdata.targetFilename" type="pcre2">(?i)(\\temp\\|\\downloads?\\|\\public\\|\\appdata\\local\\temp|\\users\\)</field>
-    <description>T1218 High: Addins.store created in sensitive/writable directory - staged for AddinUtil deserialization exploit</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100108" level="15">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\ysoserial(\.net)?\.exe$</field>
-    <description>T1218 CRITICAL: ysoserial.exe executed - .NET deserialization gadget-chain payload generator detected</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100109" level="15">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\ysoserial(\.net)?\.exe$</field>
-    <description>T1218 CRITICAL: ysoserial.exe executed via Security 4688 - .NET deserialization gadget-chain payload generator detected</description>
-    <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-  </rule>
-
-  <rule id="100110" level="15">
+  <rule id="100106" level="15">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.originalFileName" type="pcre2">(?i)ysoserial(\.net)?\.exe</field>
-    <description>T1218 CRITICAL: ysoserial.exe executed via renamed binary (OriginalFileName match) - evasion attempt detected</description>
+    <description>CRITICAL ysoserial.exe executed - payload generator (Sysmon)</description>
     <group>T1218,lolbas_addinutil,</group>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
+  </rule>
+
+  <rule id="100156" level="15">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\ysoserial(\.net)?\.exe$</field>
+    <description>CRITICAL ysoserial.exe executed - payload generator (Native)</description>
+    <group>T1218,lolbas_addinutil,</group>
   </rule>
 
 
   <rule id="100200" level="12">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4104$</field>
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4104$</field>
     <field name="win.eventdata.scriptBlockText" type="pcre2">(?i)ms-appinstaller://\?source=https?://</field>
-    <description>T1105 Suspicious: ms-appinstaller:// URI with remote source found in PowerShell ScriptBlock - AppInstaller abuse via PowerShell</description>
+    <description>T1105 ms-appinstaller URI found in PowerShell ScriptBlock</description>
     <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
   </rule>
 
   <rule id="100201" level="12">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://.*source=https?://</field>
-    <description>T1105 Suspicious: AppInstaller.exe launched with remote ms-appinstaller URI - potential MSIX payload delivery</description>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://\?source=https?://</field>
+    <description>T1105 AppInstaller.exe launched with remote URI (Sysmon)</description>
     <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
   </rule>
 
-  <rule id="100202" level="12">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
+  <rule id="100251" level="12">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
     <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://.*source=https?://</field>
-    <description>T1105 Suspicious: AppInstaller.exe launched with remote URI via Security 4688 - potential MSIX payload delivery</description>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://\?source=https?://</field>
+    <description>T1105 AppInstaller.exe launched with remote URI (Native)</description>
     <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
   </rule>
 
-  <rule id="100203" level="10">
+  <rule id="100202" level="10">
     <if_sid>61613</if_sid>
     <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\Microsoft\.DesktopAppInstaller_[0-9a-z]+\\AC\\INetCache\\.*</field>
-    <description>T1105 Suspicious: File created in AppInstaller INetCache - remote content staged via ms-appinstaller protocol</description>
+    <description>T1105 File created in AppInstaller INetCache</description>
     <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
   </rule>
 
-  <rule id="100204" level="8">
+  <rule id="100203" level="8">
     <if_sid>61605</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <description>T1105 Medium: AppInstaller.exe initiated outbound network connection - monitor for non-Microsoft Store URLs</description>
+    <description>T1105 AppInstaller.exe initiated network connection</description>
     <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-  </rule>
-
-  <rule id="100205" level="14">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|schtasks)\.exe$</field>
-    <description>T1105 High: AppInstaller.exe spawned suspicious child process - malicious MSIX payload execution likely</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
-
-  <rule id="100206" level="14">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|schtasks)\.exe$</field>
-    <description>T1105 High: AppInstaller.exe spawned suspicious child process via Security 4688 - malicious MSIX payload execution likely</description>
-    <group>T1105,lolbas_appinstaller,</group>
-    <mitre>
-      <id>T1105</id>
-      <id>T1059</id>
-    </mitre>
   </rule>
 
 
-  <rule id="100211" level="5">
+  <rule id="100210" level="0">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <description>T1127 aspnet_compiler.exe executed - rare outside developer/build environments; baseline visibility</description>
+    <description>T1127 aspnet_compiler.exe executed (Sysmon)</description>
     <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-    </mitre>
   </rule>
 
-  <rule id="100212" level="5">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
+  <rule id="100260" level="0">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
     <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <description>T1127 aspnet_compiler.exe executed via Security 4688 - baseline visibility</description>
+    <description>T1127 aspnet_compiler.exe executed (Native)</description>
     <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-    </mitre>
   </rule>
 
-  <rule id="100213" level="12">
-    <if_sid>100211,100212</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(-p\s+|/p\s+|--path\s+).*(?:\\temp\\|\\downloads?\\|\\public\\|\\appdata\\|\\users\\[^\\]+\\desktop)</field>
-    <description>T1127 Suspicious: aspnet_compiler.exe -p flag points to sensitive writable path - potential malicious Build Provider execution</description>
+  <rule id="100211" level="12">
+    <if_sid>100210,100260</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)[\\/]+(temp|downloads?|public|desktop)[\\/]+</field>
+    <description>T1127 aspnet_compiler.exe loaded from sensitive writable path</description>
     <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-    </mitre>
   </rule>
 
-  <rule id="100214" level="14">
+  <rule id="100217" level="14">
+    <if_sid>100210,100260</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)\s-u(\s|$)</field>
+    <description>CRITICAL: T1127 aspnet_compiler.exe executed with Updateable flag (-u)</description>
+    <group>T1127,lolbas_aspnet,defense_evasion,high_confidence,</group>
+  </rule>
+
+  <rule id="100212" level="14">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.parentImage" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|schtasks)\.exe$</field>
-    <description>T1127 High: aspnet_compiler.exe spawned shell/LOLBin child - malicious Build Provider or code injection (AsyncRAT pattern)</description>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh)\.exe$</field>
+    <description>T1127 aspnet_compiler.exe spawned shell child (Sysmon)</description>
     <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-      <id>T1059</id>
-    </mitre>
   </rule>
 
-  <rule id="100215" level="14">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
+  <rule id="100262" level="14">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
     <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|certutil|bitsadmin|wmic|schtasks)\.exe$</field>
-    <description>T1127 High: aspnet_compiler.exe spawned shell/LOLBin child via Security 4688</description>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh|calc)\.exe$</field>
+    <description>T1127 aspnet_compiler.exe spawned shell child (Native)</description>
     <group>T1127,lolbas_aspnet,</group>
-    <mitre>
-      <id>T1127</id>
-      <id>T1059</id>
-    </mitre>
+  </rule>
+
+  <rule id="100213" level="14">
+    <if_sid>61603</if_sid>
+    <field name="win.eventdata.parentCommandLine" type="pcre2">(?i)aspnet_compiler\.exe.*\s-u(\s|$)</field>
+    <description>T1127 Child process spawned by aspnet_compiler.exe with -u flag (Sysmon)</description>
+    <group>T1127,lolbas_aspnet,defense_evasion,</group>
+  </rule>
+
+  <rule id="100214" level="15">
+    <if_sid>100213</if_sid>
+    <field name="win.eventdata.parentCommandLine" type="pcre2">(?i)(-p\s+.*\\(Desktop|Temp|Downloads|AppData)|-f\s+[A-Za-z]:\\temp\\)</field>
+    <description>CRITICAL T1127 aspnet_compiler.exe child process: parent used writable path</description>
+    <group>T1127,lolbas_aspnet,defense_evasion,critical,high_confidence,</group>
+  </rule>
+
+  <rule id="100215" level="13">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4911$</field>
+    <field name="win.eventdata.processName" type="pcre2">(?i)aspnet_compiler\.exe$</field>
+    <description>T1127 aspnet_compiler.exe modified resource attributes on compiled file (EID 4911)</description>
+    <group>T1127,lolbas_aspnet,defense_evasion,</group>
+  </rule>
+
+  <rule id="100216" level="14">
+    <if_sid>100215</if_sid>
+    <field name="win.eventdata.objectName" type="pcre2">(?i)[\\/]+(temp|tmp|downloads?|desktop|appdata|public)[\\/]+.*\.(aspx|cs|dll|exe|ps1|bat|vbs|js|config|evil)$</field>
+    <description>T1127 aspnet_compiler.exe compiled output written to user-writable directory</description>
+    <group>T1127,lolbas_aspnet,defense_evasion,high_confidence,</group>
   </rule>
 
 
   <rule id="100300" level="0">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\at\.exe$</field>
-    <description>T1053.002 At.exe process creation observed (baseline)</description>
+    <description>T1053.002 At.exe process creation (Sysmon)</description>
     <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
   </rule>
 
-  <rule id="100301" level="0">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
+  <rule id="100350" level="0">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
     <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\at\.exe$</field>
-    <description>T1053.002 At.exe process creation observed via Security 4688 (baseline)</description>
+    <description>T1053.002 At.exe process creation (Native)</description>
     <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
   </rule>
 
-  <rule id="100302" level="12">
-    <if_sid>100300,100301</if_sid>
+  <rule id="100301" level="12">
+    <if_sid>100300,100350</if_sid>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)/interactive\b</field>
-    <description>T1053.002 Suspicious: At.exe called with /interactive - scheduled task will run in active desktop session (session hijack risk)</description>
+    <description>T1053.002 At.exe called with interactive flag</description>
     <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
   </rule>
 
-  <rule id="100303" level="8">
-    <if_sid>100300,100301</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)\bat\.exe\b.*\b\d{1,2}:\d{2}\b</field>
-    <description>T1053.002 Low: At.exe called with explicit time argument - deprecated scheduler rarely used legitimately in modern Windows</description>
-    <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
-  </rule>
-
-  <rule id="100304" level="13">
-    <if_sid>100300,100301</if_sid>
+  <rule id="100302" level="13">
+    <if_sid>100300,100350</if_sid>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)\\\\[a-z0-9_\-\.]+\\.*</field>
-    <description>T1053.002 High: At.exe called with UNC remote path - scheduled execution of payload from network share (lateral movement indicator)</description>
+    <description>T1053.002 At.exe called with UNC remote path</description>
     <group>T1053.002,lolbas_at,</group>
-    <mitre>
-      <id>T1053.002</id>
-    </mitre>
   </rule>
 
 
   <rule id="100320" level="0">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\ATBroker\.exe$</field>
-    <description>T1546.008 ATBroker.exe process creation observed (baseline)</description>
-    <group>T1546.008,T1218,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-    </mitre>
+    <description>T1546.008 ATBroker.exe process creation (Sysmon)</description>
+    <group>T1546.008,lolbas_atbroker,</group>
+  </rule>
+
+  <rule id="100370" level="0">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\ATBroker\.exe$</field>
+    <description>T1546.008 ATBroker.exe process creation (Native)</description>
+    <group>T1546.008,lolbas_atbroker,</group>
   </rule>
 
   <rule id="100321" level="12">
-    <if_sid>100320</if_sid>
+    <if_sid>100320,100370</if_sid>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)/start\s+</field>
     <field name="win.eventdata.commandLine" type="pcre2" negate="yes">(?i)/start\s+(narrator|animations|audiodescription|caretbrowsing|caretwidth|colorfiltering|cursorscheme|filterkeys|focusborderheight|focusborderwidth|highcontrast|keyboardcues|keyboardpref|magnifierpane|messageduration|minimumhitradius|mousekeys|osk|overlappedcontent|showsounds|soundsentry|stickykeys|togglekeys|windowarranging|windowtracking|windowtrackingtimeout|windowtrackingzorder)\b</field>
-    <description>LOLBAS [T1546.008] Suspicious: ATBroker.exe /start with non-standard AT name - possible fake Assistive Technology registration for persistence</description>
+    <description>T1546.008 ATBroker.exe start with non-standard AT name</description>
     <group>T1546.008,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-      <id>T1218</id>
-    </mitre>
   </rule>
 
-  <rule id="100322" level="14">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\ATBroker\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32|calc)\.exe$</field>
-    <description>T1546.008 High: ATBroker.exe spawned unexpected child process - fake AT entry executed malicious payload</description>
-    <group>T1546.008,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-      <id>T1059</id>
-    </mitre>
-  </rule>
-
-  <rule id="100323" level="13">
-    <if_sid>61615</if_sid>
+  <rule id="100322" level="13">
+    <if_sid>61614,61615,61616</if_sid>
     <field name="win.eventdata.targetObject" type="pcre2">(?i)\\(SOFTWARE\\Microsoft|Software\\Microsoft)\\Windows NT\\CurrentVersion\\Accessibility\\(ATs|Configuration)</field>
-    <description>T1546.008 High: Registry modification to Accessibility ATs key - attacker may be registering fake AT for persistence or UAC bypass</description>
+    <description>T1546.008 Registry mod to Accessibility ATs Configuration (Sysmon)</description>
     <group>T1546.008,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-    </mitre>
   </rule>
 
-  <rule id="100324" level="13">
-    <if_sid>61615</if_sid>
-    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\Accessibility\\ATs\\.*\\StartExe</field>
-    <description>T1546.008 High: Registry StartExe value set under Accessibility ATs - Assistive Technology executable path may be hijacked for persistence</description>
+  <rule id="100371" level="13">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\reg\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)Accessibility\\\\ATs</field>
+    <description>T1546.008 ATBroker.exe Registry Persistence via reg.exe (Native)</description>
     <group>T1546.008,lolbas_atbroker,</group>
-    <mitre>
-      <id>T1546.008</id>
-    </mitre>
   </rule>
 
 
   <rule id="100330" level="3">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\bash\.exe$</field>
-    <description>T1202 bash.exe (WSL legacy) process creation - deprecated since Windows 1709; any execution may be suspicious</description>
+    <description>T1202 bash.exe legacy process creation (Sysmon)</description>
     <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
+  </rule>
+
+  <rule id="100380" level="3">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bash\.exe$</field>
+    <description>T1202 bash.exe legacy process creation (Native)</description>
+    <group>T1202,lolbas_bash,</group>
   </rule>
 
   <rule id="100331" level="12">
-    <if_sid>100330</if_sid>
+    <if_sid>100330,100380</if_sid>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)\bbash(\.exe)?\s+-c\s+</field>
-    <description>T1202 Suspicious: bash.exe -c flag used - command executed indirectly via deprecated WSL bash binary</description>
+    <description>T1202 bash.exe shell flag used</description>
     <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
   </rule>
 
   <rule id="100332" level="13">
-    <if_sid>100330</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(/dev/tcp|tcp-connect|\bnc\b|\bncat\b|curl\s|wget\s|/C\s|&gt;.*\.exe|python.*socket|bash.*&amp;)</field>
-    <description>T1202 High: bash.exe command line contains network or shell escape patterns - potential reverse shell or data exfiltration</description>
+    <if_sid>100330,100380</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(/dev/tcp|tcp-connect|\bnc\b|\bncat\b|curl\s|wget\s|python.*socket|&gt;)</field>
+    <description>T1202 bash.exe command contains network or shell escape patterns</description>
     <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
   </rule>
 
   <rule id="100333" level="13">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.parentImage" type="pcre2">(?i)\\bash\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|net\.exe|net1|schtasks|certutil)\.exe$</field>
-    <description>T1202 High: bash.exe (WSL) spawned Windows shell/LOLBin - indirect command execution bridging WSL and Win32 environments</description>
+    <field name="win.eventdata.image" type="pcre2">(?i)\\(cmd|powershell|pwsh)\.exe$</field>
+    <description>T1202 bash.exe spawned Windows shell (Sysmon)</description>
     <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-      <id>T1059</id>
-    </mitre>
+  </rule>
+
+  <rule id="100383" level="13">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
+    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\bash\.exe$</field>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(cmd|powershell|pwsh)\.exe$</field>
+    <description>T1202 bash.exe spawned Windows shell (Native)</description>
+    <group>T1202,lolbas_bash,</group>
   </rule>
 
   <rule id="100334" level="13">
     <if_sid>61605</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\bash\.exe$</field>
-    <description>T1202 High: bash.exe (WSL legacy) initiated network connection - unexpected for deprecated binary; investigate for C2/exfiltration</description>
+    <description>T1202 bash.exe initiated network connection</description>
     <group>T1202,lolbas_bash,</group>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
   </rule>
 
 
@@ -420,73 +320,34 @@
     <if_sid>61603</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)(/transfer\s|/addfile\s).*https?://</field>
-    <description>T1197/T1105 Suspicious: bitsadmin.exe /transfer or /addfile with HTTP(S) URL - active BITS download to victim machine</description>
+    <description>T1197 bitsadmin.exe transfer or addfile with URL (Sysmon)</description>
     <group>T1197,T1105,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-      <id>T1105</id>
-    </mitre>
   </rule>
 
-  <rule id="100401" level="12">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
+  <rule id="100450" level="12">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
     <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bitsadmin\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)(/transfer\s|/addfile\s).*https?://</field>
-    <description>T1197/T1105 Suspicious: bitsadmin.exe /transfer or /addfile with HTTP(S) URL via Security 4688 - BITS download</description>
+    <description>T1197 bitsadmin.exe transfer or addfile with URL (Native)</description>
     <group>T1197,T1105,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-      <id>T1105</id>
-    </mitre>
   </rule>
 
   <rule id="100402" level="14">
     <if_sid>61603</if_sid>
     <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)/setnotifycmdline\s</field>
-    <description>T1197 High: bitsadmin.exe /setnotifycmdline - registering notify callback for BITS job completion (persistence mechanism)</description>
+    <description>T1197 bitsadmin.exe setnotifycmdline persistence callback (Sysmon)</description>
     <group>T1197,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-      <id>T1546</id>
-    </mitre>
   </rule>
 
-  <rule id="100403" level="14">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
+  <rule id="100452" level="14">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID" type="pcre2">^4688$</field>
     <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bitsadmin\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)/setnotifycmdline\s</field>
-    <description>T1197 High: bitsadmin.exe /setnotifycmdline via Security 4688 - BITS persistence callback registered</description>
+    <description>T1197 bitsadmin.exe setnotifycmdline persistence callback (Native)</description>
     <group>T1197,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-      <id>T1546</id>
-    </mitre>
-  </rule>
-
-  <rule id="100404" level="8">
-    <if_sid>61603</if_sid>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)/create\s</field>
-    <description>T1197 Low: bitsadmin.exe /create - new BITS transfer job created; monitor subsequent /addfile or /setnotifycmdline calls</description>
-    <group>T1197,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-    </mitre>
-  </rule>
-
-  <rule id="100405" level="8">
-    <if_sid>60103</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)/create\s</field>
-    <description>T1197 Low: bitsadmin.exe /create via Security 4688 - new BITS transfer job created</description>
-    <group>T1197,lolbas_bitsadmin,</group>
-    <mitre>
-      <id>T1197</id>
-    </mitre>
   </rule>
 
 </group>
