@@ -1,387 +1,266 @@
-<group name="vsec,lolbas,windows,">
+<group name="vsec,lolbas,windows">
 
-  <rule id="160100" level="0">
-    <if_sid>220000</if_sid>
+  <!-- ==================== AddinUtil.exe ==================== -->
+  <rule id="230100" level="12">
+    <if_sid>61603</if_sid>
     <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)[\x5c/]AddinUtil\.exe$</field>
-    <description>LOLBAS base: AddinUtil.exe process creation (Sysmon EID 1)</description>
-    <group>lolbas_addinutil,</group>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)AddInUtil\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)-(?:AddinRoot|PipelineRoot)\b</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1218 AddinUtil.exe invoked with -AddinRoot/-PipelineRoot (Sysmon)</description>
+    <mitre>
+      <id>T1218</id>
+    </mitre>
+    <group>T1218,lolbas_addinutil,defense_evasion</group>
   </rule>
 
-  <rule id="160150" level="0">
+  <rule id="230101" level="12">
     <if_sid>60000</if_sid>
     <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)[\x5c/]AddinUtil\.exe$</field>
-    <description>LOLBAS base: AddinUtil.exe process creation (Native EID 4688)</description>
-    <group>lolbas_addinutil,</group>
-  </rule>
-
-  <rule id="160102" level="12">
-    <if_sid>160100, 160150</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:-{1,2}|/)(?:AddinRoot|PipelineRoot):\s*(?:&quot;?.*[\x5c/](?:temp|users?|downloads?|public|appdata|programdata)(?:[\x5c/]|&quot;|$|\s)|&quot;?\.\s*(?:&quot;|$|\s))</field>
-    <description>T1218 AddinUtil.exe invoked with -AddinRoot/-PipelineRoot pointing to writable or current directory — potential deserialization abuse</description>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)(?:\\|/)AddInUtil\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)-(?:AddinRoot|PipelineRoot)\b</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1218 AddinUtil.exe invoked with -AddinRoot/-PipelineRoot (Native)</description>
     <mitre>
       <id>T1218</id>
     </mitre>
-    <group>T1218,lolbas_addinutil,defense_evasion,</group>
+    <group>T1218,lolbas_addinutil,defense_evasion</group>
   </rule>
 
-  <rule id="160103" level="15">
-    <if_sid>220000</if_sid>
+  <rule id="230102" level="15">
+    <if_sid>61603</if_sid>
     <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)[\x5c/]AddinUtil\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)[\x5c/](?:cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32)\.exe$</field>
-    <description>T1218 AddinUtil.exe spawned suspicious child process (Sysmon)</description>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)(?:\\|/)AddInUtil\.exe$</field>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)(?:cmd|powershell|pwsh|wscript|cscript)\.exe$</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1218 AddinUtil.exe spawned suspicious child process (Sysmon)</description>
     <mitre>
       <id>T1218</id>
     </mitre>
-    <group>T1218,lolbas_addinutil,defense_evasion,</group>
+    <group>T1218,lolbas_addinutil,defense_evasion</group>
   </rule>
 
-  <rule id="160153" level="15">
+  <rule id="230103" level="15">
     <if_sid>60000</if_sid>
     <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)[\x5c/]AddinUtil\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)[\x5c/](?:cmd|powershell|pwsh|wscript|cscript|mshta|rundll32|regsvr32)\.exe$</field>
-    <description>T1218 AddinUtil.exe spawned suspicious child process (Native EID 4688)</description>
+    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)(?:\\|/)AddInUtil\.exe$</field>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)(?:\\|/)(?:cmd|powershell|pwsh|wscript|cscript)\.exe$</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1218 AddinUtil.exe spawned suspicious child process (Native)</description>
     <mitre>
       <id>T1218</id>
     </mitre>
-    <group>T1218,lolbas_addinutil,defense_evasion,</group>
+    <group>T1218,lolbas_addinutil,defense_evasion</group>
   </rule>
 
-  <rule id="160104" level="10">
-    <if_sid>160100</if_sid>
-    <field name="win.eventdata.image" type="pcre2" negate="yes">(?i)[\x5c/]Microsoft\.NET[\x5c/]Framework(?:64)?[\x5c/]v[\d.]+[\x5c/]AddinUtil\.exe$</field>
-    <description>T1218 AddinUtil.exe executed from non-default path (outside versioned .NET Framework directory) — Sysmon</description>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-    <group>T1218,lolbas_addinutil,defense_evasion,</group>
-  </rule>
-
-  <rule id="160154" level="10">
-    <if_sid>160150</if_sid>
-    <field name="win.eventdata.newProcessName" type="pcre2" negate="yes">(?i)[\x5c/]Microsoft\.NET[\x5c/]Framework(?:64)?[\x5c/]v[\d.]+[\x5c/]AddinUtil\.exe$</field>
-    <description>T1218 AddinUtil.exe executed from non-default path (outside versioned .NET Framework directory) — Native</description>
-    <mitre>
-      <id>T1218</id>
-    </mitre>
-    <group>T1218,lolbas_addinutil,defense_evasion,</group>
-  </rule>
-
-  <rule id="160105" level="10">
-    <if_sid>220000</if_sid>
+  <rule id="230104" level="10">
+    <if_sid>61605</if_sid>
     <field name="win.system.eventID">^3$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)[\x5c/]AddinUtil\.exe$</field>
-    <description>T1218 AddinUtil.exe initiated outbound network connection — anomalous for this binary</description>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)AddInUtil\.exe$</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1218 AddinUtil.exe initiated outbound network connection (Sysmon)</description>
     <mitre>
       <id>T1218</id>
     </mitre>
-    <group>T1218,lolbas_addinutil,network_connection,</group>
+    <group>T1218,lolbas_addinutil,network_connection</group>
   </rule>
 
-  <rule id="160200" level="0">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <description>LOLBAS base: AppInstaller.exe process creation (Sysmon EID 1)</description>
-    <group>lolbas_appinstaller,</group>
-  </rule>
-
-  <rule id="160250" level="0">
+  <!-- ==================== AppInstaller.exe ==================== -->
+  <rule id="230200" level="12">
     <if_sid>60000</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <description>LOLBAS base: AppInstaller.exe process creation (Native EID 4688)</description>
-    <group>lolbas_appinstaller,</group>
-  </rule>
-
-  <rule id="160201" level="12">
-    <if_group>windows</if_group>
     <field name="win.system.eventID">^4104$</field>
-    <field name="win.eventdata.scriptBlockText" type="pcre2">(?i)ms-appinstaller:[\x5c/]{2}\?source=https?://</field>
-    <description>T1105 ms-appinstaller remote URI found in PowerShell ScriptBlock (EID 4104)</description>
+    <field name="win.eventdata.scriptBlockText" type="pcre2">(?i)ms-appinstaller://</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1105 ms-appinstaller remote URI found in PowerShell ScriptBlock (EID 4104)</description>
     <mitre>
       <id>T1105</id>
     </mitre>
-    <group>T1105,lolbas_appinstaller,command_and_control,</group>
+    <group>T1105,lolbas_appinstaller,defense_evasion</group>
   </rule>
 
-  <rule id="160202" level="12">
-    <if_sid>160200, 160250</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller:[\x5c/]{2}\?source=https?://</field>
-    <description>T1105 AppInstaller.exe invoked with remote ms-appinstaller:// URI</description>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-    <group>T1105,lolbas_appinstaller,command_and_control,</group>
-  </rule>
-
-  <rule id="160203" level="10">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID">^11$</field>
-    <field name="win.eventdata.targetFilename" type="pcre2">(?i)\\Microsoft\.DesktopAppInstaller_[^\x5c/]+\\AC\\INetCache[\x5c/]</field>
-    <description>T1105 File written to AppInstaller INetCache — possible remote payload staged on disk</description>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-    <group>T1105,lolbas_appinstaller,file_creation,</group>
-  </rule>
-
-  <rule id="160204" level="8">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID">^3$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\AppInstaller\.exe$</field>
-    <description>T1105 AppInstaller.exe initiated outbound network connection</description>
-    <mitre>
-      <id>T1105</id>
-    </mitre>
-    <group>T1105,lolbas_appinstaller,network_connection,</group>
-  </rule>
-
-  <rule id="160210" level="0">
-    <if_sid>220000</if_sid>
+  <rule id="230201" level="12">
+    <if_sid>61603</if_sid>
     <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <description>LOLBAS base: aspnet_compiler.exe process creation (Sysmon EID 1)</description>
-    <group>lolbas_aspnet,</group>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)AppInstaller\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1105 AppInstaller.exe invoked with remote ms-appinstaller URI (Sysmon)</description>
+    <mitre>
+      <id>T1105</id>
+    </mitre>
+    <group>T1105,lolbas_appinstaller,defense_evasion</group>
   </rule>
 
-  <rule id="160260" level="0">
+  <rule id="230202" level="12">
     <if_sid>60000</if_sid>
     <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <description>LOLBAS base: aspnet_compiler.exe process creation (Native EID 4688)</description>
-    <group>lolbas_aspnet,</group>
-  </rule>
-
-  <rule id="160215" level="5">
-    <if_sid>160210, 160260</if_sid>
-    <description>T1127 aspnet_compiler.exe baseline execution — rarely invoked outside dev/build environments; verify context</description>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)(?:\\|/)AppInstaller\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)ms-appinstaller://</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1105 AppInstaller.exe invoked with remote ms-appinstaller URI (Native)</description>
     <mitre>
-      <id>T1127</id>
+      <id>T1105</id>
     </mitre>
-    <group>T1127,lolbas_aspnet,defense_evasion,</group>
+    <group>T1105,lolbas_appinstaller,defense_evasion</group>
   </rule>
 
-  <rule id="160211" level="12">
-    <if_sid>160210, 160260</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i).*[\x5c/](?:temp|public|downloads?|appdata|programdata)[\x5c/]</field>
-    <description>T1127 aspnet_compiler.exe invoked with path in writable directory — possible custom Build Provider abuse</description>
-    <mitre>
-      <id>T1127</id>
-    </mitre>
-    <group>T1127,lolbas_aspnet,defense_evasion,</group>
-  </rule>
-
-  <rule id="160212" level="14">
-    <if_sid>220000</if_sid>
+  <!-- ==================== aspnet_compiler.exe ==================== -->
+  <rule id="230300" level="12">
+    <if_sid>61603</if_sid>
     <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(?:cmd|powershell|pwsh|wscript|cscript|mshta)\.exe$</field>
-    <description>T1127 aspnet_compiler.exe spawned shell/interpreter child process — possible code injection (Sysmon)</description>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)aspnet_compiler\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:-p|-f|-u)\s+["']?[^"'\s]*(?:\\|/)(?:temp|public|downloads?)</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1127 aspnet_compiler.exe invoked with path in writable directory (Sysmon)</description>
     <mitre>
       <id>T1127</id>
     </mitre>
-    <group>T1127,lolbas_aspnet,defense_evasion,</group>
+    <group>T1127,lolbas_aspnet_compiler,defense_evasion</group>
   </rule>
 
-  <rule id="160262" level="14">
+  <rule id="230301" level="12">
     <if_sid>60000</if_sid>
     <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(?:cmd|powershell|pwsh|wscript|cscript|mshta)\.exe$</field>
-    <description>T1127 aspnet_compiler.exe spawned shell/interpreter child process — possible code injection (Native)</description>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)(?:\\|/)aspnet_compiler\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:-p|-f|-u)\s+["']?[^"'\s]*(?:\\|/)(?:temp|public|downloads?)</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1127 aspnet_compiler.exe invoked with path in writable directory (Native)</description>
     <mitre>
       <id>T1127</id>
     </mitre>
-    <group>T1127,lolbas_aspnet,defense_evasion,</group>
+    <group>T1127,lolbas_aspnet_compiler,defense_evasion</group>
   </rule>
 
-  <rule id="160213" level="10">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID">^3$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\aspnet_compiler\.exe$</field>
-    <description>T1127 aspnet_compiler.exe initiated outbound network connection — anomalous behaviour</description>
-    <mitre>
-      <id>T1127</id>
-    </mitre>
-    <group>T1127,lolbas_aspnet,network_connection,</group>
-  </rule>
-
-  <rule id="160300" level="0">
-    <if_sid>220000</if_sid>
+  <!-- ==================== At.exe ==================== -->
+  <rule id="230400" level="12">
+    <if_sid>61603</if_sid>
     <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)[\x5c/]at\.exe$</field>
-    <description>LOLBAS base: At.exe process creation (Sysmon EID 1)</description>
-    <group>lolbas_at,</group>
-  </rule>
-
-  <rule id="160350" level="0">
-    <if_sid>60000</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)[\x5c/]at\.exe$</field>
-    <description>LOLBAS base: At.exe process creation (Native EID 4688)</description>
-    <group>lolbas_at,</group>
-  </rule>
-
-  <rule id="160301" level="12">
-    <if_sid>160300, 160350</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:/interactive\b|[\x5c/]{2}[a-z0-9][\w.-]{1,62}\b)</field>
-    <description>T1053.002 At.exe invoked with /interactive flag or UNC remote path — possible interactive exec or lateral movement</description>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)at\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:/interactive\b|(?:\\|/){2}[a-z0-9][\w.-]{1,62}\b)</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1053.002 At.exe invoked with /interactive flag or UNC remote path (Sysmon)</description>
     <mitre>
       <id>T1053.002</id>
     </mitre>
-    <group>T1053.002,lolbas_at,execution,lateral_movement,</group>
+    <group>T1053.002,lolbas_at,execution</group>
   </rule>
 
-  <rule id="160320" level="0">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\ATBroker\.exe$</field>
-    <description>LOLBAS base: ATBroker.exe process creation (Sysmon EID 1)</description>
-    <group>lolbas_atbroker,</group>
-  </rule>
-
-  <rule id="160370" level="0">
+  <rule id="230401" level="12">
     <if_sid>60000</if_sid>
     <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\ATBroker\.exe$</field>
-    <description>LOLBAS base: ATBroker.exe process creation (Native EID 4688)</description>
-    <group>lolbas_atbroker,</group>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)(?:\\|/)at\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:/interactive\b|(?:\\|/){2}[a-z0-9][\w.-]{1,62}\b)</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1053.002 At.exe invoked with /interactive flag or UNC remote path (Native)</description>
+    <mitre>
+      <id>T1053.002</id>
+    </mitre>
+    <group>T1053.002,lolbas_at,execution</group>
   </rule>
 
-  <rule id="160321" level="12">
-    <if_sid>160320, 160370</if_sid>
+  <!-- ==================== ATBroker.exe ==================== -->
+  <rule id="230500" level="12">
+    <if_sid>61603</if_sid>
+    <field name="win.system.eventID">^1$</field>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)ATBroker\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)/start\s+\S</field>
     <field name="win.eventdata.commandLine" type="pcre2" negate="yes">(?i)/start\s+(?:narrator|animations|audiodescription|caretbrowsing|caretwidth|colorfiltering|cursorscheme|filterkeys|focusborderheight|focusborderwidth|highcontrast|keyboardcues|keyboardpref|magnifierpane|messageduration|minimumhitradius|mousekeys|osk|overlappedcontent|showsounds|soundsentry|stickykeys|togglekeys|windowarranging|windowtracking(?:timeout|zorder)?)\b</field>
-    <description>T1546.008 ATBroker.exe /start with unrecognised Assistive Technology name — possible fake AT persistence or proxy execution</description>
-    <mitre>
-      <id>T1546.008</id>
-      <id>T1218</id>
-    </mitre>
-    <group>T1546.008,T1218,lolbas_atbroker,persistence,defense_evasion,</group>
-  </rule>
-
-  <rule id="160322" level="13">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID" type="pcre2">^(?:12|13|14)$</field>
-    <field name="win.eventdata.targetObject" type="pcre2">(?i)\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\(?:ATs|Configuration)(?:\\|$)</field>
-    <description>T1546.008 Registry create/set/delete under Accessibility\ATs or Configuration key — possible fake AT registration (Sysmon)</description>
+    <options>no_full_log</options>
+    <description>VSEC: T1546.008 ATBroker.exe /start with unrecognised Assistive Technology name (Sysmon)</description>
     <mitre>
       <id>T1546.008</id>
     </mitre>
-    <group>T1546.008,lolbas_atbroker,persistence,registry,</group>
+    <group>T1546.008,lolbas_atbroker,defense_evasion</group>
   </rule>
 
-  <rule id="160323" level="13">
-    <if_sid>60000</if_sid>
-    <field name="win.system.eventID">^4657$</field>
-    <field name="win.eventdata.objectName" type="pcre2">(?i)\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\(?:ATs|Configuration)(?:\\|$)</field>
-    <description>T1546.008 Registry value set under Accessibility\ATs or Configuration key — possible fake AT registration (Native EID 4657)</description>
-    <mitre>
-      <id>T1546.008</id>
-    </mitre>
-    <group>T1546.008,lolbas_atbroker,persistence,registry,</group>
-  </rule>
-
-  <rule id="160330" level="0">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bash\.exe$</field>
-    <description>LOLBAS base: bash.exe (WSL legacy) process creation (Sysmon EID 1)</description>
-    <group>lolbas_bash,</group>
-  </rule>
-
-  <rule id="160380" level="0">
+  <rule id="230501" level="12">
     <if_sid>60000</if_sid>
     <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bash\.exe$</field>
-    <description>LOLBAS base: bash.exe (WSL legacy) process creation (Native EID 4688)</description>
-    <group>lolbas_bash,</group>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)(?:\\|/)ATBroker\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)/start\s+\S</field>
+    <field name="win.eventdata.commandLine" type="pcre2" negate="yes">(?i)/start\s+(?:narrator|animations|audiodescription|caretbrowsing|caretwidth|colorfiltering|cursorscheme|filterkeys|focusborderheight|focusborderwidth|highcontrast|keyboardcues|keyboardpref|magnifierpane|messageduration|minimumhitradius|mousekeys|osk|overlappedcontent|showsounds|soundsentry|stickykeys|togglekeys|windowarranging|windowtracking(?:timeout|zorder)?)\b</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1546.008 ATBroker.exe /start with unrecognised Assistive Technology name (Native)</description>
+    <mitre>
+      <id>T1546.008</id>
+    </mitre>
+    <group>T1546.008,lolbas_atbroker,defense_evasion</group>
   </rule>
 
-  <rule id="160331" level="8">
-    <if_sid>160330, 160380</if_sid>
+  <!-- ==================== bash.exe ==================== -->
+  <rule id="230600" level="8">
+    <if_sid>61603</if_sid>
+    <field name="win.system.eventID">^1$</field>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)bash\.exe$</field>
     <field name="win.eventdata.commandLine" type="pcre2">(?i)\s-c\s</field>
-    <description>T1202 bash.exe invoked with -c flag (inline command execution mode)</description>
+    <options>no_full_log</options>
+    <description>VSEC: T1202 bash.exe invoked with -c flag (Sysmon)</description>
     <mitre>
       <id>T1202</id>
     </mitre>
-    <group>T1202,lolbas_bash,defense_evasion,</group>
+    <group>T1202,lolbas_bash,defense_evasion</group>
   </rule>
 
-  <rule id="160332" level="13">
-    <if_sid>160331</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:/dev/tcp|tcp-connect|\bncat?\b|\bcurl\b|\bwget\b|base64\s+-d|[Cc]:\\\\[Ww]indows\\[\x5c/]|&gt;\s*[\x5c/])</field>
-    <description>T1202 bash.exe -c with network/payload/redirect indicator — possible reverse shell, exfiltration, or staged download</description>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
-    <group>T1202,lolbas_bash,defense_evasion,exfiltration,command_and_control,</group>
-  </rule>
-
-  <rule id="160333" level="13">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.parentImage" type="pcre2">(?i)\\bash\.exe$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\(?:cmd|powershell|pwsh|wscript|cscript)\.exe$</field>
-    <description>T1202 bash.exe spawned a Windows shell/interpreter — anomalous WSL-to-Win32 pivot (Sysmon)</description>
-    <mitre>
-      <id>T1202</id>
-    </mitre>
-    <group>T1202,lolbas_bash,defense_evasion,</group>
-  </rule>
-
-  <rule id="160383" level="13">
+  <rule id="230601" level="8">
     <if_sid>60000</if_sid>
     <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)\\bash\.exe$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(?:cmd|powershell|pwsh|wscript|cscript)\.exe$</field>
-    <description>T1202 bash.exe spawned a Windows shell/interpreter — anomalous WSL-to-Win32 pivot (Native)</description>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)(?:\\|/)bash\.exe$</field>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)\s-c\s</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1202 bash.exe invoked with -c flag (Native)</description>
     <mitre>
       <id>T1202</id>
     </mitre>
-    <group>T1202,lolbas_bash,defense_evasion,</group>
+    <group>T1202,lolbas_bash,defense_evasion</group>
   </rule>
 
-  <rule id="160334" level="10">
-    <if_sid>220000</if_sid>
+  <rule id="230602" level="13">
+    <if_sid>230600,230601</if_sid>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:/dev/tcp|tcp-connect|\bncat?\b|\bcurl\b|\bwget\b|base64\s+-d)</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1202 bash.exe -c with network/payload indicator</description>
+    <mitre>
+      <id>T1202</id>
+    </mitre>
+    <group>T1202,lolbas_bash,defense_evasion</group>
+  </rule>
+
+  <rule id="230603" level="13">
+    <if_sid>61603</if_sid>
+    <field name="win.system.eventID">^1$</field>
+    <field name="win.eventdata.parentImage" type="pcre2">(?i)(?:\\|/)bash\.exe$</field>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)(?:cmd|powershell)\.exe$</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1202 bash.exe spawned a Windows shell/interpreter (Sysmon)</description>
+    <mitre>
+      <id>T1202</id>
+    </mitre>
+    <group>T1202,lolbas_bash,defense_evasion</group>
+  </rule>
+
+  <rule id="230604" level="13">
+    <if_sid>60000</if_sid>
+    <field name="win.system.eventID">^4688$</field>
+    <field name="win.eventdata.parentProcessName" type="pcre2">(?i)(?:\\|/)bash\.exe$</field>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)(?:\\|/)(?:cmd|powershell)\.exe$</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1202 bash.exe spawned a Windows shell/interpreter (Native)</description>
+    <mitre>
+      <id>T1202</id>
+    </mitre>
+    <group>T1202,lolbas_bash,defense_evasion</group>
+  </rule>
+
+  <rule id="230605" level="10">
+    <if_sid>61605</if_sid>
     <field name="win.system.eventID">^3$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bash\.exe$</field>
-    <description>T1202 bash.exe initiated outbound network connection — correlate with HID-2 for reverse-shell confirmation</description>
+    <field name="win.eventdata.image" type="pcre2">(?i)(?:\\|/)bash\.exe$</field>
+    <options>no_full_log</options>
+    <description>VSEC: T1202 bash.exe initiated outbound network connection (Sysmon)</description>
     <mitre>
       <id>T1202</id>
     </mitre>
-    <group>T1202,lolbas_bash,network_connection,</group>
-  </rule>
-
-  <rule id="160400" level="0">
-    <if_sid>220000</if_sid>
-    <field name="win.system.eventID">^1$</field>
-    <field name="win.eventdata.image" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <description>LOLBAS base: bitsadmin.exe process creation (Sysmon EID 1)</description>
-    <group>lolbas_bitsadmin,</group>
-  </rule>
-
-  <rule id="160450" level="0">
-    <if_sid>60000</if_sid>
-    <field name="win.system.eventID">^4688$</field>
-    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\bitsadmin\.exe$</field>
-    <description>LOLBAS base: bitsadmin.exe process creation (Native EID 4688)</description>
-    <group>lolbas_bitsadmin,</group>
-  </rule>
-
-  <rule id="160401" level="12">
-    <if_sid>160400, 160450</if_sid>
-    <field name="win.eventdata.commandLine" type="pcre2">(?i)(?:/transfer\b|/addfile\b|/setnotifycmdline\b)</field>
-    <description>T1197 bitsadmin.exe used for file transfer or BITS-job persistence (flags: /transfer, /addfile, /setnotifycmdline)</description>
-    <mitre>
-      <id>T1197</id>
-      <id>T1105</id>
-    </mitre>
-    <group>T1197,T1105,lolbas_bitsadmin,defense_evasion,command_and_control,</group>
+    <group>T1202,lolbas_bash,network_connection</group>
   </rule>
 
 </group>
